@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.2.0] — 2026-02-23
+
+### Improvements
+- [IMPROVED] Refactored to build on top of Cashier's `customers` table (`paddle_id` + morphs) instead of a custom `paddle_customer_id` column
+- [IMPROVED] Guest checkout convention: `billable_type = 'guest'`, `billable_id = 0` for non-authenticated purchases
+- [NEW FEATURE] Package migration for `products`, `purchases`, `purchase_metadata` tables (previously lived in app)
+- [IMPROVED] Installer now publishes Cashier migrations and checks for both paddle-billing migration files
+- [IMPROVED] Installer validates credential prefixes with `envAskWithPrefix` re-prompt loop
+- [IMPROVED] Code clarity: extracted `createPurchaseMetadata()`, inline model resolution, cleaner variable naming
+
 ## [1.1.0] — 2026-02-23
 
 ### Features

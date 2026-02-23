@@ -7,6 +7,7 @@ namespace Brunocfalcao\PaddleBilling\Listeners;
 use Brunocfalcao\PaddleBilling\Events\PurchaseCompleted;
 use Brunocfalcao\PaddleBilling\Models\PaddleEvent;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Http;
 use Laravel\Paddle\Events\WebhookReceived;
 
 /**
@@ -47,25 +48,27 @@ class StorePaddleEvent
     private function handleTransactionCompleted(array $payload): void
     {
         $data = $payload['data'] ?? [];
-        $customerData = $data['customer'] ?? [];
-        $items = $data['items'] ?? [];
         $customData = $data['custom_data'] ?? [];
         $transactionId = $data['id'] ?? '';
 
-        $customerModel = config('paddle-billing.models.customer');
-        $productModel = config('paddle-billing.models.product');
-        $purchaseModel = config('paddle-billing.models.purchase');
+        // Extract customer and product data
+        $paddleCustomerId = $data['customer_id'] ?? ($data['customer']['id'] ?? '');
+        $customerData = $this->fetchPaddleCustomer($paddleCustomerId);
 
-        $customer = $customerModel::updateOrCreate(
-            ['paddle_customer_id' => $customerData['id'] ?? ''],
+        $priceData = ($data['items'][0]['price'] ?? []);
+
+        // Create or update models
+        $customer = config('paddle-billing.models.customer')::updateOrCreate(
+            ['paddle_id' => $paddleCustomerId],
             [
+                'billable_type' => 'guest',
+                'billable_id' => 0,
                 'email' => $customerData['email'] ?? '',
-                'name' => $customerData['name'] ?? null,
+                'name' => $customerData['name'] ?? '',
             ]
         );
 
-        $priceData = $items[0]['price'] ?? [];
-        $product = $productModel::updateOrCreate(
+        $product = config('paddle-billing.models.product')::updateOrCreate(
             ['paddle_price_id' => $priceData['id'] ?? ''],
             [
                 'name' => $priceData['name'] ?? 'Unknown',
@@ -75,7 +78,7 @@ class StorePaddleEvent
             ]
         );
 
-        $purchase = $purchaseModel::create([
+        $purchase = config('paddle-billing.models.purchase')::create([
             'customer_id' => $customer->id,
             'product_id' => $product->id,
             'paddle_transaction_id' => $transactionId,
@@ -83,13 +86,41 @@ class StorePaddleEvent
             'invoice_url' => $data['invoice_url'] ?? null,
         ]);
 
+        $this->createPurchaseMetadata($purchase, $customData);
+
+        Event::dispatch(new PurchaseCompleted($purchase, $customer, $product, $customData));
+    }
+
+    /**
+     * Fetch customer details from the Paddle API.
+     */
+    private function fetchPaddleCustomer(string $customerId): array
+    {
+        if (! $customerId) {
+            return [];
+        }
+
+        $sandbox = (bool) config('paddle-billing.sandbox', false);
+        $baseUrl = $sandbox ? 'https://sandbox-api.paddle.com' : 'https://api.paddle.com';
+        $apiKey = $sandbox
+            ? config('paddle-billing.sandbox_credentials.api_key')
+            : config('paddle-billing.live.api_key');
+
+        $response = Http::withToken($apiKey)->get("{$baseUrl}/customers/{$customerId}");
+
+        return $response->successful() ? ($response->json('data') ?? []) : [];
+    }
+
+    /**
+     * Create metadata records for a purchase from custom data.
+     */
+    private function createPurchaseMetadata($purchase, array $customData): void
+    {
         foreach ($customData as $key => $value) {
             $purchase->metadata()->create([
                 'key' => $key,
                 'value' => is_array($value) ? json_encode($value) : (string) $value,
             ]);
         }
-
-        Event::dispatch(new PurchaseCompleted($purchase, $customer, $product, $customData));
     }
 }

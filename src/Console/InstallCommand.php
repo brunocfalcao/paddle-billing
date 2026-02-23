@@ -38,9 +38,15 @@ class InstallCommand extends Command
         // 1. Publish config and migrations.
         $this->call('vendor:publish', ['--tag' => 'paddle-billing-config', '--force' => true]);
 
-        $migrationExists = count(glob(database_path('migrations/*_create_paddle_events_table.php'))) > 0;
-        if (! $migrationExists) {
+        $paddleMigrationsExist = count(glob(database_path('migrations/*_create_paddle_events_table.php'))) > 0
+            && count(glob(database_path('migrations/*_create_paddle_billing_tables.php'))) > 0;
+        if (! $paddleMigrationsExist) {
             $this->call('vendor:publish', ['--tag' => 'paddle-billing-migrations']);
+        }
+
+        $cashierMigrationExists = count(glob(database_path('migrations/*_create_customers_table.php'))) > 0;
+        if (! $cashierMigrationExists) {
+            $this->call('vendor:publish', ['--tag' => 'cashier-migrations']);
         }
 
         $env = [];
@@ -54,8 +60,8 @@ class InstallCommand extends Command
         $appUrl = rtrim(config('app.url', 'https://yoursite.com'), '/');
         $livePath = config('paddle-billing.path', 'webhooks/paddle');
         $sandboxPath = config('paddle-billing.sandbox_path', 'webhooks/paddle-sandbox');
-        $liveWebhookUrl = $appUrl . '/' . $livePath . '/webhook';
-        $sandboxWebhookUrl = $appUrl . '/' . $sandboxPath . '/webhook';
+        $liveWebhookUrl = $appUrl.'/'.$livePath.'/webhook';
+        $sandboxWebhookUrl = $appUrl.'/'.$sandboxPath.'/webhook';
 
         // 3. Live credentials.
         $this->newLine();
@@ -64,16 +70,16 @@ class InstallCommand extends Command
         $this->line('  <comment>These are your real credentials — used when sandbox mode is OFF.</comment>');
         $this->newLine();
         $env['PADDLE_SELLER_ID'] = $this->envAskNumeric('PADDLE_SELLER_ID', 'Live Seller ID <comment>(Sidebar > Your company name at the top > ⋮ menu > Seller ID)</comment>');
-        $env['PADDLE_API_KEY'] = $this->envAsk('PADDLE_API_KEY', 'Live Server-side API Key <comment>(Developer Tools > Authentication > API keys — starts with apikey_)</comment>');
-        $env['PADDLE_CLIENT_SIDE_TOKEN'] = $this->envAsk('PADDLE_CLIENT_SIDE_TOKEN', 'Live Client-side Token <comment>(Developer Tools > Authentication > Client-side tokens — starts with live_)</comment>');
+        $env['PADDLE_API_KEY'] = $this->envAskWithPrefix('PADDLE_API_KEY', 'Live Server-side API Key <comment>(Developer Tools > Authentication > API keys)</comment>', 'pdl_live_apikey_');
+        $env['PADDLE_CLIENT_SIDE_TOKEN'] = $this->envAskWithPrefix('PADDLE_CLIENT_SIDE_TOKEN', 'Live Client-side Token <comment>(Developer Tools > Authentication > Client-side tokens)</comment>', 'live_');
         $this->newLine();
         $this->line('  <comment>Before entering the webhook secret, create a notification destination in Paddle:</comment>');
-        $this->line("  <comment>1. Go to Developer Tools > Notifications > + New destination</comment>");
+        $this->line('  <comment>1. Go to Developer Tools > Notifications > + New destination</comment>');
         $this->line("  <comment>2. Set the URL to: <info>{$liveWebhookUrl}</info></comment>");
         $this->line('  <comment>3. Under "Events", select all events (read & write)</comment>');
         $this->line('  <comment>4. Save, then copy the Secret key shown</comment>');
-        $env['PADDLE_WEBHOOK_SECRET'] = $this->envAsk('PADDLE_WEBHOOK_SECRET', 'Live Webhook Secret <comment>(starts with pdl_ntfset_)</comment>');
-        $env['PADDLE_PRICE_ID'] = $this->envAsk('PADDLE_PRICE_ID', 'Live Price ID <comment>(Catalog > Prices — starts with pri_)</comment>');
+        $env['PADDLE_WEBHOOK_SECRET'] = $this->envAskWithPrefix('PADDLE_WEBHOOK_SECRET', 'Live Webhook Secret', 'pdl_ntfset_');
+        $env['PADDLE_PRICE_ID'] = $this->envAskWithPrefix('PADDLE_PRICE_ID', 'Live Price ID <comment>(Catalog > Prices)</comment>', 'pri_');
 
         // 4. Sandbox credentials.
         $this->newLine();
@@ -82,16 +88,16 @@ class InstallCommand extends Command
         $this->line('  <comment>These are test-only credentials — used when sandbox mode is ON.</comment>');
         $this->newLine();
         $env['PADDLE_SANDBOX_SELLER_ID'] = $this->envAskNumeric('PADDLE_SANDBOX_SELLER_ID', 'Sandbox Seller ID <comment>(Sidebar > Your company name at the top > ⋮ menu > Seller ID)</comment>');
-        $env['PADDLE_SANDBOX_API_KEY'] = $this->envAsk('PADDLE_SANDBOX_API_KEY', 'Sandbox Server-side API Key <comment>(Developer Tools > Authentication > API keys — starts with apikey_)</comment>');
-        $env['PADDLE_SANDBOX_CLIENT_SIDE_TOKEN'] = $this->envAsk('PADDLE_SANDBOX_CLIENT_SIDE_TOKEN', 'Sandbox Client-side Token <comment>(Developer Tools > Authentication > Client-side tokens — starts with test_)</comment>');
+        $env['PADDLE_SANDBOX_API_KEY'] = $this->envAskWithPrefix('PADDLE_SANDBOX_API_KEY', 'Sandbox Server-side API Key <comment>(Developer Tools > Authentication > API keys)</comment>', 'pdl_sdbx_apikey_');
+        $env['PADDLE_SANDBOX_CLIENT_SIDE_TOKEN'] = $this->envAskWithPrefix('PADDLE_SANDBOX_CLIENT_SIDE_TOKEN', 'Sandbox Client-side Token <comment>(Developer Tools > Authentication > Client-side tokens)</comment>', 'test_');
         $this->newLine();
         $this->line('  <comment>Before entering the webhook secret, create a notification destination in Paddle Sandbox:</comment>');
-        $this->line("  <comment>1. Go to Developer Tools > Notifications > + New destination</comment>");
+        $this->line('  <comment>1. Go to Developer Tools > Notifications > + New destination</comment>');
         $this->line("  <comment>2. Set the URL to: <info>{$sandboxWebhookUrl}</info></comment>");
         $this->line('  <comment>3. Under "Events", select all events (read & write)</comment>');
         $this->line('  <comment>4. Save, then copy the Secret key shown</comment>');
-        $env['PADDLE_SANDBOX_WEBHOOK_SECRET'] = $this->envAsk('PADDLE_SANDBOX_WEBHOOK_SECRET', 'Sandbox Webhook Secret <comment>(starts with pdl_ntfset_)</comment>');
-        $env['PADDLE_SANDBOX_PRICE_ID'] = $this->envAsk('PADDLE_SANDBOX_PRICE_ID', 'Sandbox Price ID <comment>(Catalog > Prices, starts with pri_)</comment>');
+        $env['PADDLE_SANDBOX_WEBHOOK_SECRET'] = $this->envAskWithPrefix('PADDLE_SANDBOX_WEBHOOK_SECRET', 'Sandbox Webhook Secret', 'pdl_ntfset_');
+        $env['PADDLE_SANDBOX_PRICE_ID'] = $this->envAskWithPrefix('PADDLE_SANDBOX_PRICE_ID', 'Sandbox Price ID <comment>(Catalog > Prices)</comment>', 'pri_');
 
         // 5. Webhook URLs (set automatically, no prompts needed).
         $env['PADDLE_WEBHOOK_URL'] = $liveWebhookUrl;
@@ -137,7 +143,7 @@ class InstallCommand extends Command
         $this->info('✅ paddle-billing installed!');
         $this->newLine();
         $this->line('  <comment>Next steps:</comment>');
-        $this->line("  1. Set webhook URLs in Paddle dashboards:");
+        $this->line('  1. Set webhook URLs in Paddle dashboards:');
         $this->line("     Live    → <info>{$liveWebhookUrl}</info>");
         $this->line("     Sandbox → <info>{$sandboxWebhookUrl}</info>");
         $this->line('  2. Subscribe to these events: transaction.paid, transaction.updated, transaction.completed');
@@ -146,6 +152,24 @@ class InstallCommand extends Command
         $this->line('  5. Use the <info>HasPaddleCheckout</info> trait on your billable model');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Ask for a value that must start with a specific prefix, re-prompting on mismatch.
+     */
+    private function envAskWithPrefix(string $key, string $question, string $prefix): string
+    {
+        $existing = $this->existingEnv[$key] ?? null;
+
+        while (true) {
+            $value = $this->ask("{$question} <comment>(must start with {$prefix})</comment>", $existing);
+
+            if ($value !== null && str_starts_with($value, $prefix)) {
+                return $value;
+            }
+
+            $this->error("  Invalid value — must start with \"{$prefix}\". Please try again.");
+        }
     }
 
     /**
@@ -158,7 +182,7 @@ class InstallCommand extends Command
     {
         $existing = $this->existingEnv[$key] ?? null;
 
-        do {
+        while (true) {
             $value = $this->ask($question, $existing);
 
             if ($value !== null && ctype_digit($value)) {
@@ -166,7 +190,7 @@ class InstallCommand extends Command
             }
 
             $this->error('  Seller ID must be a numeric value (e.g. 12345). Please try again.');
-        } while (true);
+        }
     }
 
     /**
@@ -226,15 +250,10 @@ class InstallCommand extends Command
 
         foreach ($values as $key => $value) {
             $formatted = $this->formatEnvValue($key, $value);
+            $pattern = '/^'.preg_quote($key, '/').'=.*/m';
 
-            // Key already exists — update in-place.
-            if (preg_match('/^' . preg_quote($key, '/') . '=.*/m', $envContent)) {
-                $envContent = preg_replace(
-                    '/^' . preg_quote($key, '/') . '=.*/m',
-                    $formatted,
-                    $envContent,
-                    1,
-                );
+            if (preg_match($pattern, $envContent)) {
+                $envContent = preg_replace($pattern, $formatted, $envContent, 1);
                 $updated++;
             } else {
                 $toAppend[] = $formatted;
@@ -243,14 +262,13 @@ class InstallCommand extends Command
 
         // Append new keys under a Paddle Billing header (only if there are new keys).
         if ($toAppend) {
-            // Avoid duplicating the header if it already exists.
             if (! Str::contains($envContent, '# Paddle Billing')) {
                 $envContent .= "\n# Paddle Billing\n";
             } else {
-                $envContent = rtrim($envContent) . "\n";
+                $envContent = rtrim($envContent)."\n";
             }
 
-            $envContent .= implode("\n", $toAppend) . "\n";
+            $envContent .= implode("\n", $toAppend)."\n";
         }
 
         file_put_contents($envPath, $envContent);
@@ -260,7 +278,7 @@ class InstallCommand extends Command
         }
 
         if ($toAppend) {
-            $this->info('  Appended ' . count($toAppend) . ' new variable(s) to .env');
+            $this->info('  Appended '.count($toAppend).' new variable(s) to .env');
         }
 
         if ($updated === 0 && ! $toAppend) {
@@ -275,10 +293,8 @@ class InstallCommand extends Command
      */
     private function formatEnvValue(string $key, string $value): string
     {
-        $needsQuotes = $value !== '' && (
-            Str::contains($value, [' ', '#', '"', '+', '=']) ||
-            str_starts_with($value, "'")
-        );
+        $hasSpecialChars = Str::contains($value, [' ', '#', '"', '+', '=']) || str_starts_with($value, "'");
+        $needsQuotes = $value !== '' && $hasSpecialChars;
 
         return $needsQuotes ? "{$key}=\"{$value}\"" : "{$key}={$value}";
     }
