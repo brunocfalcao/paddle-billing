@@ -5,7 +5,8 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "laravel/cashier-paddle": "^2.0"
+        "laravel/cashier-paddle": "^2.0",
+        "brunocfalcao/laravel-zepto-mail-api-driver": "dev-master"
     },
     "autoload": {
         "psr-4": {

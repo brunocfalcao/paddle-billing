@@ -60,6 +60,7 @@ return [
     */
 
     'path' => env('CASHIER_PATH', 'paddle'),
+    'sandbox_path' => env('CASHIER_SANDBOX_PATH', 'paddle-sandbox'),
 
     /*
     |--------------------------------------------------------------------------
@@ -112,6 +113,23 @@ return [
 
     'listeners' => [
         // 'transaction.paid' => \App\Listeners\HandlePayment::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Models
+    |--------------------------------------------------------------------------
+    |
+    | The Eloquent model classes used when processing transaction.completed
+    | webhooks. Override these if your app uses different namespaces or
+    | custom model classes.
+    |
+    */
+
+    'models' => [
+        'customer' => \App\Models\Customer::class,
+        'product'  => \App\Models\Product::class,
+        'purchase' => \App\Models\Purchase::class,
     ],
 
 ];

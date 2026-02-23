@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Paddle\Events\WebhookReceived;
 
+/**
+ * Service provider for paddle-billing package.
+ *
+ * Registers config, migrations, Blade directives, webhook listeners,
+ * and console commands. Configures Cashier with Paddle credentials
+ * based on sandbox toggle and environment configuration.
+ */
 class PaddleBillingServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -27,6 +34,12 @@ class PaddleBillingServiceProvider extends ServiceProvider
         $this->registerCommands();
     }
 
+    /**
+     * Configure Laravel Cashier with Paddle credentials.
+     *
+     * Sets seller ID, tokens, webhook secret, and paths based on whether
+     * sandbox mode is enabled. Pulls credentials from config/paddle-billing.php.
+     */
     private function configureCashier(): void
     {
         $sandbox = (bool) config('paddle-billing.sandbox', false);
@@ -40,7 +53,9 @@ class PaddleBillingServiceProvider extends ServiceProvider
             'cashier.api_key' => $credentials['api_key'] ?? null,
             'cashier.webhook_secret' => $credentials['webhook_secret'] ?? null,
             'cashier.sandbox' => $sandbox,
-            'cashier.path' => config('paddle-billing.path', 'paddle'),
+            'cashier.path' => $sandbox
+                ? config('paddle-billing.sandbox_path', 'paddle-sandbox')
+                : config('paddle-billing.path', 'paddle'),
             'cashier.currency' => config('paddle-billing.currency', 'USD'),
             'cashier.currency_locale' => config('paddle-billing.currency_locale', 'en'),
             'cashier.retain_key' => config('paddle-billing.retain_key'),
@@ -60,12 +75,16 @@ class PaddleBillingServiceProvider extends ServiceProvider
         }
     }
 
+    /**
+     * Register webhook event listeners.
+     *
+     * Always registers StorePaddleEvent to log all webhooks, then registers
+     * app-specific listeners from config/paddle-billing.php keyed by event type.
+     */
     private function registerListeners(): void
     {
-        // Always log all webhook events.
         Event::listen(WebhookReceived::class, StorePaddleEvent::class);
 
-        // Register app-specific listeners from config.
         $listeners = config('paddle-billing.listeners', []);
 
         foreach ($listeners as $eventType => $listenerClass) {
@@ -86,6 +105,12 @@ class PaddleBillingServiceProvider extends ServiceProvider
         }
     }
 
+    /**
+     * Register Blade directives for Paddle initialization.
+     *
+     * @paddleJs loads the Paddle.js library.
+     * @paddleInit initializes Paddle with the client-side token and sandbox mode.
+     */
     private function registerBladeDirectives(): void
     {
         Blade::directive('paddleJs', function () {
