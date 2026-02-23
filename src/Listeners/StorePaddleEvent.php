@@ -70,6 +70,12 @@ class StorePaddleEvent
             ]
         );
 
+        if ($customData) {
+            $customer->update([
+                'metadata' => array_merge($customer->metadata ?? [], $customData),
+            ]);
+        }
+
         $product = config('paddle-billing.models.product')::updateOrCreate(
             ['paddle_price_id' => $priceData['id'] ?? ''],
             [

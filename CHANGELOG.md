@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.0] — 2026-02-23
+
+### Features
+- [NEW FEATURE] Added `metadata` JSON column to `customers` table for storing custom data (e.g., GitHub username)
+- [NEW FEATURE] `StorePaddleEvent` now merges Paddle `customData` into customer `metadata` on each purchase
+
 ## [1.2.1] — 2026-02-23
 
 ### Fixes
