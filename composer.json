@@ -1,0 +1,26 @@
+{
+    "name": "brunocfalcao/paddle-billing",
+    "description": "Reusable Paddle billing package for Laravel — checkout helpers, webhook handling, and event logging.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "laravel/cashier-paddle": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Brunocfalcao\\PaddleBilling\\": "src/"
+        },
+        "files": [
+            "src/Helpers/PaddleHelpers.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Brunocfalcao\\PaddleBilling\\PaddleBillingServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable"
+}
