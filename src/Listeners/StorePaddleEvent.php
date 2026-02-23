@@ -23,15 +23,17 @@ class StorePaddleEvent
     {
         $paddleEventId = $event->payload['event_id'] ?? '';
 
-        if ($paddleEventId && PaddleEvent::where('paddle_event_id', $paddleEventId)->exists()) {
+        $paddleEvent = PaddleEvent::firstOrCreate(
+            ['paddle_event_id' => $paddleEventId],
+            [
+                'event_type' => $event->payload['event_type'] ?? 'unknown',
+                'payload' => $event->payload,
+            ]
+        );
+
+        if (! $paddleEvent->wasRecentlyCreated) {
             return;
         }
-
-        PaddleEvent::create([
-            'event_type' => $event->payload['event_type'] ?? 'unknown',
-            'paddle_event_id' => $paddleEventId,
-            'payload' => $event->payload,
-        ]);
 
         if (($event->payload['event_type'] ?? '') === 'transaction.completed') {
             $this->handleTransactionCompleted($event->payload);

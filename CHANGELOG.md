@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.1] — 2026-02-23
+
+### Fixes
+- [BUG FIX] Replace `exists()` + `create()` with `firstOrCreate()` in `StorePaddleEvent` to eliminate race condition where simultaneous webhook deliveries could bypass deduplication and trigger duplicate emails
+
 ## [1.2.0] — 2026-02-23
 
 ### Improvements
