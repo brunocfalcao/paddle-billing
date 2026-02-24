@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.0] — 2026-02-24
+
+### Removals
+- [IMPROVED] Removed ZeptoMail dependency — mail provider is now the app's concern, not the billing package
+- [IMPROVED] Removed ZeptoMail installer section and `injectZeptoMailConfig()` method from install command
+
 ## [1.3.0] — 2026-02-23
 
 ### Features

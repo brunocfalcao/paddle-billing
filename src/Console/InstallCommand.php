@@ -11,8 +11,8 @@ use Illuminate\Support\Str;
  * Console command to install and configure the paddle-billing package.
  *
  * Guides the user through publishing config/migrations, collecting Paddle
- * live/sandbox credentials, webhook URLs, and optional services (Pushover,
- * ZeptoMail). Updates or appends .env and runs migrations. Idempotent —
+ * live/sandbox credentials, webhook URLs, and optional services (Pushover).
+ * Updates or appends .env and runs migrations. Idempotent —
  * safe to run multiple times; updates existing keys in-place.
  */
 class InstallCommand extends Command
@@ -123,26 +123,16 @@ class InstallCommand extends Command
             $env['PUSHOVER_USER_KEY'] = $this->envAsk('PUSHOVER_USER_KEY', 'Pushover User Key');
         }
 
-        // 9. ZeptoMail (optional).
-        $this->newLine();
-        if ($this->confirm('Use ZeptoMail for transactional email?', isset($this->existingEnv['ZEPTOMAIL_MAIL_KEY']))) {
-            $env['MAIL_MAILER'] = 'zeptomail';
-            $env['MAIL_FROM_ADDRESS'] = $this->envAsk('MAIL_FROM_ADDRESS', 'Default From address <comment>(e.g. hello@yourdomain.com)</comment>');
-            $env['MAIL_FROM_NAME'] = $this->envAsk('MAIL_FROM_NAME', 'Default From name <comment>(e.g. Inomem)</comment>');
-            $env['ZEPTOMAIL_MAIL_KEY'] = $this->envAsk('ZEPTOMAIL_MAIL_KEY', 'ZeptoMail API key <comment>(from ZeptoMail dashboard > Mail Agents > Send Mail API token)</comment>');
-            $this->injectZeptoMailConfig();
-        }
-
-        // 10. Write .env.
+        // 9. Write .env.
         $this->newLine();
         $this->writeEnv($env);
 
-        // 11. Run migrations.
+        // 10. Run migrations.
         if ($this->confirm('Run migrations now?', true)) {
             $this->call('migrate');
         }
 
-        // 12. Summary.
+        // 11. Summary.
         $this->newLine();
         $this->info('✅ paddle-billing installed!');
         $this->newLine();
@@ -303,38 +293,4 @@ class InstallCommand extends Command
         return $needsQuotes ? "{$key}=\"{$value}\"" : "{$key}={$value}";
     }
 
-    /**
-     * Inject the zeptomail mailer entry into config/mail.php if not already present.
-     */
-    private function injectZeptoMailConfig(): void
-    {
-        $configPath = $this->laravel->configPath('mail.php');
-
-        if (! file_exists($configPath)) {
-            $this->warn('config/mail.php not found — skipping ZeptoMail config injection.');
-
-            return;
-        }
-
-        $content = file_get_contents($configPath);
-
-        if (str_contains($content, "'zeptomail'")) {
-            $this->line('  <comment>ZeptoMail mailer entry already present in config/mail.php</comment>');
-
-            return;
-        }
-
-        $entry = "\n        'zeptomail' => [\n            'transport' => 'zeptomail',\n        ],\n";
-
-        $content = preg_replace(
-            "/(        'array' => \[\n            'transport' => 'array',\n        \],)/",
-            "$1{$entry}",
-            $content,
-            1,
-        );
-
-        file_put_contents($configPath, $content);
-
-        $this->info('  Injected zeptomail mailer into config/mail.php');
-    }
 }
