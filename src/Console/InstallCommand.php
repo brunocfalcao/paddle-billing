@@ -103,36 +103,40 @@ class InstallCommand extends Command
         $env['PADDLE_SANDBOX_WEBHOOK_SECRET'] = $this->envAskWithPrefix('PADDLE_SANDBOX_WEBHOOK_SECRET', 'Sandbox Webhook Secret', 'pdl_ntfset_');
         $env['PADDLE_SANDBOX_PRICE_ID'] = $this->envAskWithPrefix('PADDLE_SANDBOX_PRICE_ID', 'Sandbox Price ID <comment>(Catalog > Prices)</comment>', 'pri_');
 
-        // 5. Webhook URLs (set automatically, no prompts needed).
+        // 5. Checkout URL override (derived from APP_URL — no prompt needed).
+        $env['PADDLE_CHECKOUT_URL'] = $appUrl;
+        $env['PADDLE_SANDBOX_CHECKOUT_URL'] = $appUrl;
+
+        // 6. Webhook URLs (set automatically, no prompts needed).
         $env['PADDLE_WEBHOOK_URL'] = $liveWebhookUrl;
         $env['CASHIER_PATH'] = $livePath;
         $env['CASHIER_SANDBOX_PATH'] = $sandboxPath;
 
-        // 6. Retain key (optional).
+        // 7. Retain key (optional).
         if ($this->confirm('Configure Paddle Retain (ProfitWell)?', isset($this->existingEnv['PADDLE_RETAIN_KEY']))) {
             $env['PADDLE_RETAIN_KEY'] = $this->envAsk('PADDLE_RETAIN_KEY', 'Retain Key');
         }
 
-        // 7. Currency.
+        // 8. Currency.
         $env['CASHIER_CURRENCY'] = $this->envAsk('CASHIER_CURRENCY', 'Currency code', 'USD');
 
-        // 8. Pushover (optional).
+        // 9. Pushover (optional).
         $this->newLine();
         if ($this->confirm('Enable Pushover notifications on payment?', isset($this->existingEnv['PUSHOVER_APP_KEY']))) {
             $env['PUSHOVER_APP_KEY'] = $this->envAsk('PUSHOVER_APP_KEY', 'Pushover App Key');
             $env['PUSHOVER_USER_KEY'] = $this->envAsk('PUSHOVER_USER_KEY', 'Pushover User Key');
         }
 
-        // 9. Write .env.
+        // 10. Write .env.
         $this->newLine();
         $this->writeEnv($env);
 
-        // 10. Run migrations.
+        // 11. Run migrations.
         if ($this->confirm('Run migrations now?', true)) {
             $this->call('migrate');
         }
 
-        // 11. Summary.
+        // 12. Summary.
         $this->newLine();
         $this->info('✅ paddle-billing installed!');
         $this->newLine();
@@ -144,6 +148,7 @@ class InstallCommand extends Command
         $this->line('  3. Add your listeners in <info>config/paddle-billing.php</info> → "listeners"');
         $this->line('  4. Add <info>@paddleJs</info> and <info>@paddleInit</info> to your checkout Blade view');
         $this->line('  5. Use the <info>HasPaddleCheckout</info> trait on your billable model');
+        $this->line("  6. Checkout URL override set to <info>{$appUrl}</info> (Paddle emails will link to your domain)");
 
         return self::SUCCESS;
     }

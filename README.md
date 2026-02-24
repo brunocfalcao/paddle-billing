@@ -11,12 +11,12 @@ A batteries-included Paddle Billing integration for Laravel. One install command
 
 ## What's in the box
 
-- **`paddle-billing:install`** — interactive CLI that configures `.env`, publishes config & migrations, and optionally sets up ZeptoMail and Pushover
+- **`paddle-billing:install`** — interactive CLI that configures `.env`, publishes config & migrations, and optionally sets up Pushover
 - **Auto webhook handling** — every Paddle event stored raw; `transaction.completed` triggers structured upserts and fires a typed `PurchaseCompleted` event your app listens to
 - **`@paddleJs` / `@paddleInit`** — Blade directives for clean script loading and environment-aware SDK initialization
-- **`paddle_price_id()`** — helper that always returns the right price ID for the active environment (no conditionals in your Blade)
+- **`paddle_price_id()` / `paddle_checkout_url()`** — helpers that always return the right value for the active environment
+- **Multi-domain checkout URL override** — when multiple sites share one Paddle account, pass `checkout.url` per transaction so Paddle emails link to the correct domain
 - **`PurchaseCompleted` event** — decoupled, typed event your app listens to for emails, access grants, or anything else
-- **ZeptoMail** — optional setup during install; injects the mailer into `config/mail.php` automatically
 - **Pushover** — optional push notification on every completed payment
 
 ---
@@ -48,10 +48,10 @@ The installer walks you through:
 | 1 | Sandbox toggle — live vs. test mode |
 | 2 | Live credentials — Seller ID, API Key (`pdl_live_apikey_…`), Client-side Token (`live_…`), Webhook Secret, Price ID |
 | 3 | Sandbox credentials — same set from [sandbox-vendors.paddle.com](https://sandbox-vendors.paddle.com) |
-| 4 | Paddle Retain key *(optional)* |
-| 5 | Currency — defaults to `USD` |
-| 6 | Pushover *(optional)* — App Key + User Key |
-| 7 | ZeptoMail *(optional)* — From address, From name, API key |
+| 4 | Checkout URL override — auto-set from `APP_URL` for multi-domain Paddle accounts |
+| 5 | Paddle Retain key *(optional)* |
+| 6 | Currency — defaults to `USD` |
+| 7 | Pushover *(optional)* — App Key + User Key |
 | 8 | Run migrations |
 
 The installer is **idempotent** — existing `.env` values are pre-filled and updated in-place. Safe to re-run.
@@ -72,6 +72,7 @@ return [
         'api_key'           => env('PADDLE_API_KEY'),
         'webhook_secret'    => env('PADDLE_WEBHOOK_SECRET'),
         'price_id'          => env('PADDLE_PRICE_ID'),
+        'checkout_url'      => env('PADDLE_CHECKOUT_URL'),
     ],
 
     'sandbox_credentials' => [
@@ -80,6 +81,7 @@ return [
         'api_key'           => env('PADDLE_SANDBOX_API_KEY'),
         'webhook_secret'    => env('PADDLE_SANDBOX_WEBHOOK_SECRET'),
         'price_id'          => env('PADDLE_SANDBOX_PRICE_ID'),
+        'checkout_url'      => env('PADDLE_SANDBOX_CHECKOUT_URL'),
     ],
 
     'path'         => env('CASHIER_PATH', 'paddle'),
@@ -247,19 +249,22 @@ class User extends Authenticatable
 | Method | Description |
 |---|---|
 | `isSandbox(): bool` | Whether sandbox mode is active |
-| `paddleCheckoutOptions(priceId, customData, returnUrl)` | Builds a Cashier checkout options array |
+| `paddleCheckoutOptions(priceId, customData, returnUrl)` | Builds checkout options — server-side transaction when `checkout_url` is set, client-side otherwise |
 
 ---
 
-## ZeptoMail
+## Multi-domain checkout URL
 
-During install, opting into ZeptoMail will:
+When multiple sites share the same Paddle account, the default payment link domain may point to the wrong site. Set `checkout_url` in config to override:
 
-- Set `MAIL_MAILER=zeptomail` in `.env`
-- Write `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`, and `ZEPTOMAIL_MAIL_KEY`
-- Inject the `zeptomail` mailer entry into `config/mail.php`
+```env
+PADDLE_CHECKOUT_URL=https://yoursite.com
+PADDLE_SANDBOX_CHECKOUT_URL=https://yoursite.com
+```
 
-Powered by [`brunocfalcao/laravel-zepto-mail-api-driver`](https://github.com/brunocfalcao/laravel-zepto-mail-api-driver).
+When configured, `paddleCheckoutOptions()` creates the transaction server-side via the Paddle API with `checkout.url`, then returns a `transactionId` for `Paddle.Checkout.open()`. Paddle emails and receipts will link to your domain. When not configured, the original client-side flow is used (no behavior change).
+
+The install command auto-sets both values from `APP_URL`.
 
 ---
 

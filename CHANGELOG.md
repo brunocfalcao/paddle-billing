@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.0] — 2026-02-24
+
+### Features
+- [NEW FEATURE] Multi-domain checkout URL override — `checkout_url` config key for both live and sandbox environments
+- [NEW FEATURE] `paddle_checkout_url()` helper to resolve the active checkout URL (sandbox or live)
+- [NEW FEATURE] Server-side transaction creation in `HasPaddleCheckout` trait when `checkout_url` is configured — passes `checkout.url` to Paddle API so emails/receipts link to the correct domain
+- [NEW FEATURE] Install command auto-sets `PADDLE_CHECKOUT_URL` and `PADDLE_SANDBOX_CHECKOUT_URL` from `APP_URL`
+
+### Improvements
+- [IMPROVED] `paddleCheckoutOptions()` now branches into server-side (transactionId) or client-side (items) flow based on checkout URL config
+
 ## [1.4.0] — 2026-02-24
 
 ### Removals

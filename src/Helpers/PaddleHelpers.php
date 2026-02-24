@@ -16,6 +16,20 @@ if (! function_exists('paddle_price_id')) {
     }
 }
 
+if (! function_exists('paddle_checkout_url')) {
+    /**
+     * Get the active checkout URL override (sandbox or live) from config.
+     */
+    function paddle_checkout_url(): ?string
+    {
+        $key = config('paddle-billing.sandbox')
+            ? 'paddle-billing.sandbox_credentials.checkout_url'
+            : 'paddle-billing.live.checkout_url';
+
+        return config($key);
+    }
+}
+
 if (! function_exists('paddle_checkout_options')) {
     /**
      * Encode checkout options as a JSON string for use in JS.

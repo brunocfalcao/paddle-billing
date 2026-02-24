@@ -26,6 +26,7 @@ return [
         'api_key' => env('PADDLE_API_KEY'),
         'webhook_secret' => env('PADDLE_WEBHOOK_SECRET'),
         'price_id' => env('PADDLE_PRICE_ID'),
+        'checkout_url' => env('PADDLE_CHECKOUT_URL'),
     ],
 
     /*
@@ -40,6 +41,7 @@ return [
         'api_key' => env('PADDLE_SANDBOX_API_KEY'),
         'webhook_secret' => env('PADDLE_SANDBOX_WEBHOOK_SECRET'),
         'price_id' => env('PADDLE_SANDBOX_PRICE_ID'),
+        'checkout_url' => env('PADDLE_SANDBOX_CHECKOUT_URL'),
     ],
 
     /*
