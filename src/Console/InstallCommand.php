@@ -36,7 +36,11 @@ class InstallCommand extends Command
         $this->loadExistingEnv();
 
         // 1. Publish config and migrations.
-        $this->call('vendor:publish', ['--tag' => 'paddle-billing-config', '--force' => true]);
+        if (! file_exists(config_path('paddle-billing.php'))) {
+            $this->call('vendor:publish', ['--tag' => 'paddle-billing-config']);
+        } else {
+            $this->line('  <comment>config/paddle-billing.php already exists — skipping publish (preserves your listeners).</comment>');
+        }
 
         $paddleMigrationsExist = count(glob(database_path('migrations/*_create_paddle_events_table.php'))) > 0
             && count(glob(database_path('migrations/*_create_paddle_billing_tables.php'))) > 0;
