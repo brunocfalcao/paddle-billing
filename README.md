@@ -165,6 +165,25 @@ For additional Paddle event types, register listeners in config:
 ],
 ```
 
+> **Important: Laravel auto-event-discovery caveat**
+>
+> Laravel 12 auto-discovers listeners by inspecting type-hinted `handle()` methods. If your listener accepts `WebhookReceived $event`, Laravel will register it as a **direct** listener — meaning it fires on **every** Paddle webhook, regardless of event type, bypassing the config-based routing above.
+>
+> To prevent this, always guard your listeners with an event type check:
+>
+> ```php
+> public function handle(WebhookReceived $event): void
+> {
+>     if (($event->payload['event_type'] ?? '') !== 'transaction.paid') {
+>         return;
+>     }
+>
+>     // your logic here
+> }
+> ```
+>
+> Without this guard, a `transaction.updated` event (fired when the checkout page opens) will trigger your `transaction.paid` handler — causing premature payment processing.
+
 ---
 
 ## The `PurchaseCompleted` event

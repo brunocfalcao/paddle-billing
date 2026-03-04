@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.5.1] — 2026-03-04
+
+### Docs
+- [IMPROVED] README: added warning about Laravel auto-event-discovery bypassing config-based listener routing — listeners that accept `WebhookReceived` must guard on `event_type` to prevent premature firing
+
 ## [1.5.0] — 2026-02-24
 
 ### Features
