@@ -268,7 +268,7 @@ class User extends Authenticatable
 | Method | Description |
 |---|---|
 | `isSandbox(): bool` | Whether sandbox mode is active |
-| `paddleCheckoutOptions(priceId, customData, returnUrl)` | Builds checkout options — server-side transaction when `checkout_url` is set, client-side otherwise |
+| `paddleCheckoutOptions(priceId, customData, returnUrl, discountId)` | Builds checkout options — server-side transaction when `checkout_url` is set, client-side otherwise. Pass `discountId` to auto-apply a Paddle discount. |
 
 ---
 

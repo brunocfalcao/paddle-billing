@@ -27,14 +27,15 @@ trait HasPaddleCheckout
         string $priceId,
         array $customData = [],
         ?string $returnUrl = null,
+        ?string $discountId = null,
     ): array {
         $checkoutUrl = paddle_checkout_url();
 
         if ($checkoutUrl) {
-            return $this->serverSideCheckoutOptions($priceId, $customData, $returnUrl, $checkoutUrl);
+            return $this->serverSideCheckoutOptions($priceId, $customData, $returnUrl, $checkoutUrl, $discountId);
         }
 
-        return $this->clientSideCheckoutOptions($priceId, $customData, $returnUrl);
+        return $this->clientSideCheckoutOptions($priceId, $customData, $returnUrl, $discountId);
     }
 
     /**
@@ -45,6 +46,7 @@ trait HasPaddleCheckout
         array $customData,
         ?string $returnUrl,
         string $checkoutUrl,
+        ?string $discountId = null,
     ): array {
         $customer = $this->createAsCustomer();
 
@@ -56,6 +58,10 @@ trait HasPaddleCheckout
 
         if ($customData) {
             $payload['custom_data'] = $customData;
+        }
+
+        if ($discountId) {
+            $payload['discount_id'] = $discountId;
         }
 
         $response = Cashier::api('POST', 'transactions', $payload);
@@ -71,6 +77,10 @@ trait HasPaddleCheckout
             ]),
         ];
 
+        if ($discountId) {
+            $options['discountId'] = $discountId;
+        }
+
         return $options;
     }
 
@@ -81,6 +91,7 @@ trait HasPaddleCheckout
         string $priceId,
         array $customData,
         ?string $returnUrl,
+        ?string $discountId = null,
     ): array {
         $checkout = $this->checkout([$priceId])
             ->customData($customData);
@@ -89,6 +100,12 @@ trait HasPaddleCheckout
             $checkout->returnTo($returnUrl);
         }
 
-        return $checkout->options();
+        $options = $checkout->options();
+
+        if ($discountId) {
+            $options['discountId'] = $discountId;
+        }
+
+        return $options;
     }
 }

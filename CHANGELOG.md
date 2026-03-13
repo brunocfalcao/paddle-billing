@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0] — 2026-03-13
+
+### Features
+- [NEW FEATURE] `paddleCheckoutOptions()` now accepts optional `discountId` parameter to auto-apply Paddle discounts at checkout
+- [IMPROVED] Server-side transaction creation passes `discount_id` to Paddle API when provided
+- [IMPROVED] Client-side checkout includes `discountId` in options array when provided
+
 ## [1.5.1] — 2026-03-04
 
 ### Docs
